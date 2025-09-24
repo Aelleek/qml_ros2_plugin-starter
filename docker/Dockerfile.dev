@@ -1,0 +1,14 @@
+FROM ros:humble
+
+# 빌드 도구 + colcon + Qt5 QML 런처
+RUN apt-get update && apt-get install -y \
+    build-essential cmake git python3-colcon-common-extensions \
+    qtdeclarative5-dev-tools qml-module-qtquick-controls \
+    qml-module-qtquick-layouts qml-module-qtgraphicaleffects \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /ws
+SHELL ["/bin/bash", "-lc"]
+
+# ROS 환경 자동 로드(컨테이너 로그인 시)
+RUN echo "source /opt/ros/humble/setup.bash" >> /root/.bashrc
