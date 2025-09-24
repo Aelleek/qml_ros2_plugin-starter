@@ -327,7 +327,7 @@ QoSWrapper Ros2QmlSingletonWrapper::QoS() { return {}; }
 
 QoSWrapper Ros2QmlSingletonWrapper::BestAvailableQoS()
 {
-  return QoSWrapper( rclcpp::BestAvailableQoS() );
+  return QoSWrapper( rclcpp::QoS(rclcpp::KeepLast(10)) );
 }
 QoSWrapper Ros2QmlSingletonWrapper::ClockQoS() { return QoSWrapper( rclcpp::ClockQoS() ); }
 
