@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=StefanFabian_qml_ros2_plugin&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=StefanFabian_qml_ros2_plugin)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=StefanFabian_qml_ros2_plugin&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=StefanFabian_qml_ros2_plugin)
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=StefanFabian_qml_ros2_plugin&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=StefanFabian_qml_ros2_plugin)
@@ -242,3 +243,7 @@ make html
 ### Known limitations
 
 * JavaScript doesn't have long double, hence, they are cast to double with a possible loss of precision
+=======
+# qml_ros2_plugin-starter
+ROS 2 × QML 실시간 HMI 스타터
+>>>>>>> 4297b9927c5d440a9a51fb653610021316f3b380
