@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Headless-safe defaults
+: "${ROS_DISTRO:=humble}"
+: "${DISPLAY:=:0}"
+: "${XDG_RUNTIME_DIR:=/tmp/runtime-root}"
+mkdir -p "$XDG_RUNTIME_DIR"
+
+export QT_QPA_PLATFORM=xcb
+export QT_QUICK_BACKEND=software
+export LIBGL_ALWAYS_SOFTWARE=1
+export QSG_RENDER_LOOP=basic
+export QML2_IMPORT_PATH=${QML2_IMPORT_PATH:-/ws/install/qml_ros2_plugin/lib}
+
+# Source env (nounset-safe)
+set +u
+source /opt/ros/${ROS_DISTRO}/setup.bash
+[[ -f /ws/install/setup.bash ]] && source /ws/install/setup.bash
+set -u
+
+# Launch
+qml_runner -geometry 1000x620+80+80 /ws/src/qml_ros2_plugin/examples/camera_overlay.qml
+
