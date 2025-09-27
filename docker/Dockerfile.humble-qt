@@ -1,0 +1,63 @@
+FROM osrf/ros:humble-desktop
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV QT_SELECT=qt5
+
+# 필수 패키지
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    bash ca-certificates curl git locales sudo less nano \
+    build-essential cmake python3-pip python3-colcon-common-extensions \
+    xvfb x11vnc fluxbox novnc websockify wmctrl x11-apps \
+    libgl1-mesa-dri mesa-utils \
+    qtbase5-dev qtdeclarative5-dev \
+    qtmultimedia5-dev qml-module-qtmultimedia \
+    qml-module-qtquick2 qml-module-qtquick-controls qml-module-qtquick-controls2 \
+    qml-module-qtgraphicaleffects qml-module-qtquick-layouts \
+    qml-module-qt-labs-platform qml-module-qt-labs-settings \
+    qml-module-qt-labs-folderlistmodel \
+    libqt5x11extras5 libqt5x11extras5-dev libqt5svg5 libqt5svg5-dev \
+    qtchooser qt5-qmake qtdeclarative5-dev-tools \
+    ros-humble-ros-babel-fish ros-humble-ros-babel-fish-test-msgs ros-humble-example-interfaces \
+ && rm -rf /var/lib/apt/lists/*
+
+# qtchooser 프로파일
+RUN mkdir -p /etc/xdg/qtchooser && \
+    printf "/usr/bin\n/usr/lib/x86_64-linux-gnu\n" > /etc/xdg/qtchooser/qt5.conf
+
+WORKDIR /ws
+SHELL ["/bin/bash","-lc"]
+
+# 헤드리스 기본 환경
+ENV DISPLAY=:0 \
+    QT_QPA_PLATFORM=xcb \
+    QT_QUICK_BACKEND=software \
+    LIBGL_ALWAYS_SOFTWARE=1 \
+    QT_XCB_GL_INTEGRATION=none \
+    QSG_RENDER_LOOP=basic \
+    QT_QUICK_CONTROLS_STYLE=Material
+
+# --- qml_runner (개선판) 빌드 ---
+RUN mkdir -p /usr/local/src/qml_runner
+COPY docker/qml_runner/main.cpp       /usr/local/src/qml_runner/main.cpp
+COPY docker/qml_runner/CMakeLists.txt /usr/local/src/qml_runner/CMakeLists.txt
+RUN cmake -S /usr/local/src/qml_runner -B /tmp/qml_runner \
+ && cmake --build /tmp/qml_runner -j \
+ && install -Dm755 /tmp/qml_runner/qml_runner /usr/local/bin/qml_runner \
+ && rm -rf /tmp/qml_runner
+
+# QML import 기본 경로
+ENV QML2_IMPORT_PATH=/ws/install/qml_ros2_plugin/lib
+
+# 런타임 스크립트
+COPY docker/scripts/qml_env.sh   /usr/local/share/qml_ros2_plugin/qml_env.sh
+COPY docker/scripts/run-sub      /usr/local/bin/run-sub
+COPY docker/scripts/run-pub      /usr/local/bin/run-pub
+COPY docker/run-headless.sh      /usr/local/bin/run-headless.sh
+
+RUN chmod +x /usr/local/bin/run-sub /usr/local/bin/run-pub /usr/local/bin/run-headless.sh /usr/local/bin/qml_runner \
+ && ln -sf /usr/local/share/qml_ros2_plugin/qml_env.sh /usr/local/bin/qml_env.sh || true
+
+EXPOSE 6080
+RUN echo "source /opt/ros/humble/setup.bash" >> /root/.bashrc
+CMD ["/usr/local/bin/run-headless.sh"]
+

@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# ------------------------------------------------------------
+# build-plugin
+# - qml_ros2_plugin 빌드(클린) + Humble QoS 패치 + QML 모듈 링크
+# - 컨테이너 내부에서 실행됨 (이미지에 포함)
+# - set -u 환경에서도 안전하도록 setup.bash는 set +u로 감싸서 source
+# ------------------------------------------------------------
+set -Eeuo pipefail
+
+# nounset로 터지는 변수들 기본값 미리 지정
+export AMENT_TRACE_SETUP_FILES=${AMENT_TRACE_SETUP_FILES:-0}
+export AMENT_PYTHON_EXECUTABLE=${AMENT_PYTHON_EXECUTABLE:-/usr/bin/python3}
+
+# ROS 환경 로드 (nounset 우회)
+set +u; source /opt/ros/humble/setup.bash; set -u
+
+# Humble 호환 QoS 패치 (BestAvailable → KeepLast(10)+Reliable+Volatile)
+sed -i.bak -E 's/BestAvailable\s*\(\s*\)/rclcpp::QoS(rclcpp::KeepLast(10)).reliability(rclcpp::ReliabilityPolicy::Reliable).durability(rclcpp::DurabilityPolicy::Volatile)/g' \
+  /ws/src/qml_ros2_plugin/src/*.cpp /ws/src/qml_ros2_plugin/src/*/*.cpp 2>/dev/null || true
+
+# 클린 빌드
+cd /ws && rm -rf build install log
+colcon build --packages-select qml_ros2_plugin --event-handlers console_direct+
+
+# 설치된 환경 로드 + 링크 (nounset 우회)
+set +u; source /ws/install/setup.bash; set -u
+ln -snf /ws/install/qml_ros2_plugin/lib/Ros2 /ws/install/qml_ros2_plugin/lib/Ros
+
+echo "[OK] qml_ros2_plugin built and linked."
+

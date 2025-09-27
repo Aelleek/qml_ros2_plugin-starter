@@ -1,14 +1,87 @@
-FROM ros:humble
+ FROM ros:humble
+ 
+ # Build tools, colcon, Qt5(QML), Multimedia, GStreamer, ROS deps
+ RUN apt-get update && apt-get install -y \
+     build-essential \
+     cmake \
+     git \
+     python3-colcon-common-extensions \
+     # Qt5 dev + QML 런타임/툴
+     qtbase5-dev \
+     qtbase5-dev-tools \
+     qtdeclarative5-dev \
+     qtdeclarative5-dev-tools \
+     qml-module-qtquick-controls \
+     qml-module-qtquick-controls2 \
+     qml-module-qtquick-layouts \
+     qml-module-qtgraphicaleffects \
+     # Multimedia + GStreamer
+     qtmultimedia5-dev \
+     qml-module-qtmultimedia \
+     libqt5multimedia5 \
+     libqt5multimedia5-plugins \
+     gstreamer1.0-tools \
+     gstreamer1.0-libav \
+     gstreamer1.0-plugins-base \
+     gstreamer1.0-plugins-good \
+     gstreamer1.0-plugins-bad \
+     # ROS deps
+     ros-humble-image-transport \
+     ros-humble-cv-bridge \
+     ros-humble-tf2-ros \
+     ros-humble-example-interfaces \
+     ros-humble-action-tutorials-interfaces \
+     ros-humble-ros-babel-fish \
+     ros-humble-ros-babel-fish-test-msgs \
+     # qtchooser
+     qtchooser \
+     qt5-qmake \
++    # headless GUI utils
++    wmctrl \
+     && rm -rf /var/lib/apt/lists/*
+ 
+ WORKDIR /ws
+ SHELL ["/bin/bash", "-lc"]
+ 
+ # ros_babel_fish 소스 포함(humble 브랜치) + (가능하면) test_msgs 바이너리
+ RUN mkdir -p /ws/src && cd /ws/src && \
+     git clone -b humble https://github.com/LOEWE-emergenCITY/ros_babel_fish.git
+ RUN apt-get update && apt-get install -y ros-humble-ros-babel-fish-test-msgs || true && rm -rf /var/lib/apt/lists/*
+ 
+ # qtchooser 프로파일을 /usr/bin 기준으로 고정 (현재 컨테이너에서 qmlscene 위치가 /usr/bin/qmlscene)
+ RUN mkdir -p /etc/xdg/qtchooser && \
+     printf "/usr/bin\n/usr/lib/x86_64-linux-gnu\n" > /etc/xdg/qtchooser/qt5.conf
+ ENV QT_SELECT=qt5
+ 
+ # --- noVNC & VNC & X 가상디스플레이 & 유틸 ---
+ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+     xvfb x11vnc fluxbox \
+     novnc python3-websockify \
+     iproute2 curl \
+  && rm -rf /var/lib/apt/lists/*
+ 
+ # 선택: 편의를 위해 기본 Qt 선택값을 Qt5로
+ ENV QT_SELECT=qt5
+ 
+ # noVNC 기본 포트
+ EXPOSE 6080
+ 
+ # 컨테이너 로그인 시 ROS 환경 자동 로드
+ RUN echo "source /opt/ros/humble/setup.bash" >> /root/.bashrc
++
++# ----[추가] 런타임 스크립트/런처 복사 ----
++# 로컬 레포에 다음 파일들이 존재해야 함:
++#  - scripts/qml_env.sh
++#  - scripts/run-sub
++#  - scripts/run-pub
++#  - docker/run-headless.sh
++COPY scripts/qml_env.sh /usr/local/share/qml_ros2_plugin/qml_env.sh
++COPY scripts/run-sub /usr/local/bin/run-sub
++COPY scripts/run-pub /usr/local/bin/run-pub
++COPY docker/run-headless.sh /usr/local/bin/run-headless.sh
++RUN chmod +x /usr/local/bin/run-sub /usr/local/bin/run-pub /usr/local/bin/run-headless.sh \
++ && ln -sf /usr/local/share/qml_ros2_plugin/qml_env.sh /usr/local/bin/qml_env.sh || true
++
++# (선택) 컨테이너가 올라오면 바로 headless 스택 가동
++CMD ["/usr/local/bin/run-headless.sh"]
 
-# 빌드 도구 + colcon + Qt5 QML 런처
-RUN apt-get update && apt-get install -y \
-    build-essential cmake git python3-colcon-common-extensions \
-    qtdeclarative5-dev-tools qml-module-qtquick-controls \
-    qml-module-qtquick-layouts qml-module-qtgraphicaleffects \
-    && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /ws
-SHELL ["/bin/bash", "-lc"]
-
-# ROS 환경 자동 로드(컨테이너 로그인 시)
-RUN echo "source /opt/ros/humble/setup.bash" >> /root/.bashrc

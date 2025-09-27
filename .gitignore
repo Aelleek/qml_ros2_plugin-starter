@@ -1,6 +1,39 @@
 .vscode/
 .idea/
 cmake-build-*/
-build/
 
 *.qmlc
+
+# build/install/log (colcon)
+build/
+install/
+log/
+
+# editor/OS
+.vscode/
+.idea/
+.DS_Store
+
+# temp & logs
+*.log
+/tmp/
+*.swp
+
+# our local backups
+*.bak
+
+# docker layer/stray files accidentally created
+/[0-9a-f]{8,}
+/[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]*
+GIT
+/Using
+
+# compiled stuff
+*.o
+*.so
+*.a
+
+# Python junk (just in case)
+__pycache__/
+*.pyc
+GIT
