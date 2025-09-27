@@ -1,0 +1,12 @@
+i# Export QML2_IMPORT_PATH for qml_ros2_plugin
+if [ -d "@CMAKE_INSTALL_PREFIX@/qml_ros2_plugin/lib" ]; then
+  if [ -z "${QML2_IMPORT_PATH:-}" ]; then
+    export QML2_IMPORT_PATH="@CMAKE_INSTALL_PREFIX@/qml_ros2_plugin/lib"
+  else
+    export QML2_IMPORT_PATH="@CMAKE_INSTALL_PREFIX@/qml_ros2_plugin/lib:${QML2_IMPORT_PATH}"
+  fi
+  if [ -d "@CMAKE_INSTALL_PREFIX@/qml_ros2_plugin/lib/Ros2" ] && [ ! -e "@CMAKE_INSTALL_PREFIX@/qml_ros2_plugin/lib/Ros" ]; then
+    ln -s "@CMAKE_INSTALL_PREFIX@/qml_ros2_plugin/lib/Ros2" "@CMAKE_INSTALL_PREFIX@/qml_ros2_plugin/lib/Ros" 2>/dev/null || true
+  fi
+fi
+

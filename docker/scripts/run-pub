@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+if   [ -f /usr/local/share/qml_ros2_plugin/qml_env.sh ]; then source /usr/local/share/qml_ros2_plugin/qml_env.sh
+elif [ -f /usr/local/bin/qml_env.sh ]; then source /usr/local/bin/qml_env.sh
+else echo "[ERR] qml_env.sh not found"; exit 1; fi
+
+LAUNCHER="qml_runner"
+PREFERRED="/ws/src/qml_ros2_plugin/examples/publisher.qml"
+FALLBACK="/ws/install/qml_ros2_plugin/share/qml_ros2_plugin/examples/publisher.qml"
+
+if   [ -f "$PREFERRED" ]; then QMLFILE="$PREFERRED"
+elif [ -f "$FALLBACK"  ]; then QMLFILE="$FALLBACK"
+else echo "[ERR] publisher.qml not found: $PREFERRED | $FALLBACK"; exit 1; fi
+
+mkdir -p /tmp
+exec $LAUNCHER -geometry "${GEOM:-900x640+980+40}" "$QMLFILE" > /tmp/pub.log 2>&1
+
