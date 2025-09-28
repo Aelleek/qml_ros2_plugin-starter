@@ -1,0 +1,42 @@
+set -euo pipefail
+
+: humble
+: :0
+: /run/user/1000
+mkdir -p /run/user/1000 && chmod 700 /run/user/1000
+
+# ---- GL 모드 (LLVMpipe로 OpenGL 사용) ----
+export LIBGL_ALWAYS_SOFTWARE=1
+unset QT_QUICK_BACKEND                 # software 강제 해제 → GL 경로 사용
+export QT_XCB_GL_INTEGRATION=glx       # Xvfb에서 GLX 사용
+export QSG_RENDER_LOOP=basic
+export QT_MEDIA_BACKEND=gstreamer
+export GST_AUDIOSINK=fakesink
+export PULSE_SERVER=unix:/dev/null
+export ALSA_CONFIG_PATH=/dev/null
+export ALSOFT_DRIVERS=null
+export ALSOFT_LOGLEVEL=0
+export QT_LOGGING_RULES="qt.multimedia.*=false"
+export XDG_RUNTIME_DIR=/tmp/runtime-root
+mkdir -p /tmp/runtime-root && chmod 700 /tmp/runtime-root
+export QML2_IMPORT_PATH=/ws/install/qml_ros2_plugin/lib
+
+# (오디오 경고 억제 - 무음)
+export GST_AUDIOSINK=fakesink
+export PULSE_SERVER=unix:/dev/null
+export ALSA_CONFIG_PATH=/dev/null
+export QT_LOGGING_RULES="qt.multimedia.*=false"
+
+set +u
+source /opt/ros/humble/setup.bash
+[[ -f /ws/install/setup.bash ]] && source /ws/install/setup.bash
+set -u
+
+# 샘플 영상 없으면 생성
+if [[ ! -s /ws/assets/sample.mp4 ]]; then
+  apt-get update -qq && apt-get install -y --no-install-recommends ffmpeg > /dev/null
+  mkdir -p /ws/assets
+  ffmpeg -y -f lavfi -i testsrc=size=1280x720:rate=30 -t 15          -vf drawtext=text=%{n}:fontcolor=white:fontsize=48:x=20:y=40          -c:v libx264 -b:v 2M -pix_fmt yuv420p -movflags +faststart /ws/assets/sample.mp4
+fi
+
+qml_runner -geometry 1100x660+60+60 /ws/src/qml_ros2_plugin/examples/video_overlay.qml

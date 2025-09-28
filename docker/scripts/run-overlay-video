@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+: "${ROS_DISTRO:=humble}"
+: "${DISPLAY:=:0}"
+: "${XDG_RUNTIME_DIR:=/tmp/runtime-root}"
+mkdir -p "$XDG_RUNTIME_DIR"
+
+export QT_QPA_PLATFORM=xcb
+export QT_QUICK_BACKEND=software
+export LIBGL_ALWAYS_SOFTWARE=1
+export QSG_RENDER_LOOP=basic
+export GST_VIDEOSINK=ximagesink
+export GST_AUDIOSINK=fakesink
+export GST_GL_DISABLE=1
+export QT_MEDIA_BACKEND=gstreamer
+export XDG_RUNTIME_DIR=/tmp/runtime-root
+mkdir -p /tmp/runtime-root && chmod 700 /tmp/runtime-root
+export GST_VIDEOSINK=ximagesink
+export GST_AUDIOSINK=fakesink
+export QT_MEDIA_BACKEND=gstreamer
+export XDG_RUNTIME_DIR=/tmp/runtime-root
+mkdir -p /tmp/runtime-root && chmod 700 /tmp/runtime-root
+export QML2_IMPORT_PATH=${QML2_IMPORT_PATH:-/ws/install/qml_ros2_plugin/lib}
+
+set +u
+source /opt/ros/${ROS_DISTRO}/setup.bash
+[[ -f /ws/install/setup.bash ]] && source /ws/install/setup.bash
+set -u
+
+if [[ ! -f /ws/assets/sample.mp4 ]]; then
+  echo ">> Missing video: /ws/assets/sample.mp4"
+  echo "   docker cp ./sample.mp4 qmlros2_hmi:/ws/assets/sample.mp4"
+  exit 1
+fi
+
+qml_runner -geometry 1100x660+60+60 /ws/src/qml_ros2_plugin/examples/video_overlay.qml
+
