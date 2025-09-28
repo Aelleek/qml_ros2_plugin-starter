@@ -1,7 +1,3 @@
-아래 내용을 그대로 `README.md`에 붙여 넣으면 됩니다. (맨 위는 당신 포크의 추가/개선 사항, 맨 아래는 **Upstream 원본 README**를 보존해 두었습니다.)
-
----
-
 # qml_ros2_plugin-starter
 
 ROS 2 × QML 헤드리스 HMI 스타터 (Humble/Jammy)
@@ -74,12 +70,6 @@ docker exec -it qmlros2_hmi bash -lc '
   ffmpeg -y -f lavfi -i testsrc=size=1280x720:rate=30 -t 15 \
          -c:v libx264 -pix_fmt yuv420p -movflags +faststart /ws/assets/sample.mp4'
 ```
-
-* 내 영상 사용:
-
-  ```bash
-  docker cp /path/to/local/my.mp4 qmlros2_hmi:/ws/assets/sample.mp4
-  ```
 
 ### 3) 비디오 오버레이 실행(권장)
 
