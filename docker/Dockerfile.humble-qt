@@ -3,7 +3,7 @@ FROM osrf/ros:humble-desktop
 ENV DEBIAN_FRONTEND=noninteractive
 ENV QT_SELECT=qt5
 
-# 필수 패키지
+# 필수 패키지 + (추가) 멀티미디어/코덱/GL/ffmpeg/폰트
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     bash ca-certificates curl git locales sudo less nano \
     build-essential cmake python3-pip python3-colcon-common-extensions \
@@ -18,6 +18,13 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     libqt5x11extras5 libqt5x11extras5-dev libqt5svg5 libqt5svg5-dev \
     qtchooser qt5-qmake qtdeclarative5-dev-tools \
     ros-humble-ros-babel-fish ros-humble-ros-babel-fish-test-msgs ros-humble-example-interfaces \
+    \
+    # === 여기부터 새로 추가된 멀티미디어/코덱/툴 ===
+    libqt5multimedia5 libqt5multimedia5-plugins \
+    gstreamer1.0-tools gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav \
+    ffmpeg \
+    fonts-dejavu-core \
  && rm -rf /var/lib/apt/lists/*
 
 # qtchooser 프로파일
@@ -27,14 +34,17 @@ RUN mkdir -p /etc/xdg/qtchooser && \
 WORKDIR /ws
 SHELL ["/bin/bash","-lc"]
 
-# 헤드리스 기본 환경
+# 헤드리스 기본 환경(software 경로 기본값)
 ENV DISPLAY=:0 \
     QT_QPA_PLATFORM=xcb \
     QT_QUICK_BACKEND=software \
     LIBGL_ALWAYS_SOFTWARE=1 \
     QT_XCB_GL_INTEGRATION=none \
     QSG_RENDER_LOOP=basic \
-    QT_QUICK_CONTROLS_STYLE=Material
+    QT_QUICK_CONTROLS_STYLE=Material \
+    # (추가) 기본 미디어 백엔드/로그 정숙
+    QT_MEDIA_BACKEND=gstreamer \
+    QT_LOGGING_RULES="qt.multimedia.*=false"
 
 # --- qml_runner (개선판) 빌드 ---
 RUN mkdir -p /usr/local/src/qml_runner
@@ -56,6 +66,17 @@ COPY docker/run-headless.sh      /usr/local/bin/run-headless.sh
 
 RUN chmod +x /usr/local/bin/run-sub /usr/local/bin/run-pub /usr/local/bin/run-headless.sh /usr/local/bin/qml_runner \
  && ln -sf /usr/local/share/qml_ros2_plugin/qml_env.sh /usr/local/bin/qml_env.sh || true
+
+# ===== [NEW] 비디오 데모 파일/런처를 이미지에 포함 =====
+# 소스 트리에서 빌드한다는 가정(리포에 파일 존재)
+#   - examples/video_overlay.qml
+#   - docker/scripts/run-overlay-video
+#   - docker/scripts/run-overlay-video-gl
+COPY examples/video_overlay.qml /ws/src/qml_ros2_plugin/examples/video_overlay.qml
+COPY docker/scripts/run-overlay-video    /ws/src/qml_ros2_plugin/docker/scripts/run-overlay-video
+COPY docker/scripts/run-overlay-video-gl /ws/src/qml_ros2_plugin/docker/scripts/run-overlay-video-gl
+RUN chmod +x /ws/src/qml_ros2_plugin/docker/scripts/run-overlay-video \
+             /ws/src/qml_ros2_plugin/docker/scripts/run-overlay-video-gl
 
 EXPOSE 6080
 RUN echo "source /opt/ros/humble/setup.bash" >> /root/.bashrc
