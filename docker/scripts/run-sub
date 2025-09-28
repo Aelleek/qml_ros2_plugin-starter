@@ -1,17 +1,23 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+
+# 1) qml_env.sh 탐색: /usr/local/...  → /usr/local/bin → 리포 경로까지 폴백
 if   [ -f /usr/local/share/qml_ros2_plugin/qml_env.sh ]; then source /usr/local/share/qml_ros2_plugin/qml_env.sh
 elif [ -f /usr/local/bin/qml_env.sh ]; then source /usr/local/bin/qml_env.sh
-else echo "[ERR] qml_env.sh not found"; exit 1; fi
+elif [ -f /ws/src/qml_ros2_plugin/docker/scripts/qml_env.sh ]; then source /ws/src/qml_ros2_plugin/docker/scripts/qml_env.sh
+else echo "[ERR] qml_env.sh not found in /usr/local/... or repo"; exit 1; fi
 
-LAUNCHER="qml_runner"
+# 2) QML 파일: src 우선, install 폴백
 PREFERRED="/ws/src/qml_ros2_plugin/examples/subscription.qml"
 FALLBACK="/ws/install/qml_ros2_plugin/share/qml_ros2_plugin/examples/subscription.qml"
-
 if   [ -f "$PREFERRED" ]; then QMLFILE="$PREFERRED"
 elif [ -f "$FALLBACK"  ]; then QMLFILE="$FALLBACK"
 else echo "[ERR] subscription.qml not found: $PREFERRED | $FALLBACK"; exit 1; fi
 
-mkdir -p /tmp
-exec $LAUNCHER -geometry "${GEOM:-900x640+40+40}" "$QMLFILE" > /tmp/sub.log 2>&1
-
+# 3) 런처: qml_runner 있으면 사용, 없으면 qmlscene/qml 폴백
+if command -v qml_runner >/dev/null 2>&1; then
+  exec qml_runner -geometry "${GEOM:-900x640+40+40}" "$QMLFILE" > /tmp/sub.log 2>&1
+else
+  QMLBIN="$(command -v qmlscene || command -v qml)"
+  exec "$QMLBIN" -platform xcb -geometry "${GEOM:-900x640+40+40}" "$QMLFILE" > /tmp/sub.log 2>&1
+fi
